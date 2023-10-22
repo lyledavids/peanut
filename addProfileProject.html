@@ -64,16 +64,30 @@
         </div>
       </nav>
     <div class="container">
-        <h1 class="text-center">Reward your favorite public goods developer</h1>
 
         <div class="row">
             <div class="col-md-2"></div>
             <div class="col-md-8">
                 
 
-                <h2 class="text-center">Reward developers</h2>
-                <div id="creatorsDOM"></div>
-
+                <div id="AddProjectDiv">
+                    <h2 class="text-center">Add your Project/Profile</h2>
+                <form>
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="name">
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="githubURL" class="form-label">Github Profile</label>
+                        <input type="text" class="form-control" id="githubURL" placeholder="https://github.com/profile">
+                    </div>
+                    <button type="button" id="creatorOnboardSubmitBtn" class="btn btn-light">Submit</button>
+                </form>
+                </div>
             </div>
             <div class="col-md-2"></div>
         </div>
