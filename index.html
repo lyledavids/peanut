@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Peanut</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+
+        <style>
+            body {
+                padding: 20px;
+            }
+    
+            h1,
+            h2 {
+                margin-bottom: 30px;
+            }
+    
+            form {
+                margin-bottom: 30px;
+            }
+    
+            .card {
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+    
+            .card-body {
+                text-align: left;
+            }
+    
+            label {
+                font-weight: bold;
+            }
+    
+            #creatorsDOM {
+                text-align: left;
+            }
+    
+            #creatorsDOM .card-body {
+                margin-bottom: 20px;
+            }
+    
+            #creatorOnboardSubmitBtn {
+                margin-top: 20px;
+            }
+        </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-light bg-light">
+        <div class="container-fluid">
+          <a class="navbar-brand" href="#">
+            
+            Peanut
+          </a>
+        </div>
+      </nav>
+    <div class="container">
+        <h1 class="text-center">Reward your favorite public goods developer</h1>
+
+        <div class="row">
+            <div class="col-md-2"></div>
+            <div class="col-md-8">
+                <h2 class="text-center">Add your Project/Profile</h2>
+                <form>
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="name">
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="githubURL" class="form-label">Github Profile</label>
+                        <input type="text" class="form-control" id="githubURL" placeholder="https://github.com/profile">
+                    </div>
+                    <button type="button" id="creatorOnboardSubmitBtn" class="btn btn-primary">Submit</button>
+                </form>
+
+                <h2 class="text-center">Reward developers</h2>
+                <div id="creatorsDOM"></div>
+            </div>
+            <div class="col-md-2"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN"
+        crossorigin="anonymous"></script>
+    <script src="js/web3.min.js"></script>
+    <script type="text/javascript">
+
+        if (typeof window.ethereum !== 'undefined') {
+            console.log('MetaMask is installed!');
+        } else {
+            alert('Please install Metamask first.');
+        }
+
+        async function getAccount() {
+            const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+            return accounts[0];
+        }
+
+        function getTotalCreators() {
+            const creators = contract.methods.creatorsNumber().call();
+            return creators;
+        }
+
+        async function onboardCreator(name, description, githubURL) {
+            const account = await getAccount();
+            await contract.methods.createAccount(name, description, githubURL).send({ from: account });
+        }
+
+        async function rewardCreatorById(creatorId){
+            let account = await getAccount();
+            let amount = document.getElementById(`input${creatorId}`).value;
+            await contract.methods.rewardCreatorById(creatorId).send({from: account, value: web3.utils.toWei(amount, 'ether')});
+        }
+
+        async function fillCreatorDOM() {
+            const creators = await getTotalCreators();
+            for (i = 0; i <= creators; i++) {
+                let creator = await contract.methods.creatorById(i).call();
+                let creatorName = creator[0];
+                let githubURL = creator[1];
+                let description = creator[2];
+                let newDiv = document.createElement("div");
+                newDiv.setAttribute("id", i);
+                newDiv.setAttribute("class", "card-body");
+                document.getElementById('creatorsDOM').appendChild(newDiv);
+                newDiv.innerHTML = `<div class="card">
+                        <div class="card-body">
+                            Name: ${creatorName}
+                            <br />
+                            Description: ${description}
+                            <br />
+                            Github: <a href="${githubURL}" target="_blank">Link</a>
+                            <br />
+                            Creator reward amount: <input type="text" id="input${i}">
+                            <br />
+                            <button class="btn btn-primary" onclick="rewardCreatorById(${i})">Reward</button>
+                        </div>
+                    </div>`
+            }
+        }
+
+        const ABI = [
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "description",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "githubURL",
+				"type": "string"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "wallet",
+				"type": "address"
+			}
+		],
+		"name": "CreatorLog",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "donor",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "creator",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "RewardLog",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_name",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_description",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_githubURL",
+				"type": "string"
+			}
+		],
+		"name": "createAccount",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_id",
+				"type": "uint256"
+			}
+		],
+		"name": "creatorById",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "description",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "creatorsNumber",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_id",
+				"type": "uint256"
+			}
+		],
+		"name": "rewardCreatorById",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	}
+]
+
+        const contractAddress = "0x05D0AcA3ba12f010f6A26104da5cB83419723842";
+
+        const web3 = new Web3(Web3.givenProvider);
+        const account = getAccount();
+
+        const contract = new web3.eth.Contract(ABI, contractAddress);
+
+        fillCreatorDOM();
+
+        document.getElementById('creatorOnboardSubmitBtn').onclick = function () {
+            let name = document.getElementById('name').value;
+            let description = document.getElementById('description').value;
+            let githubURL = document.getElementById('githubURL').value;
+            onboardCreator(name, description, githubURL);
+        }
+
+    </script>
+</body>
+
+</html>
